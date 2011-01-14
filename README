@@ -1,0 +1,7 @@
+This PHP class provides a basic implementation of the Google Calendar API (v2.1) 
+which you can use within your own web application. While this class doesn't implement
+all of the features of the Google Calendar API, it serves as a light weight alternative
+which can get you started and perform the most basic operations on a Google Calendar.
+
+This software is released and licensed by Montania System AB, http://www.montania.se/, 
+and licensed under the **** license. 
