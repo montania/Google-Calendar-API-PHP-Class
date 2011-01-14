@@ -3,5 +3,5 @@ which you can use within your own web application. While this class doesn't impl
 all of the features of the Google Calendar API, it serves as a light weight alternative
 which can get you started and perform the most basic operations on a Google Calendar.
 
-This software is released and licensed by Montania System AB, http://www.montania.se/, 
-and licensed under the **** license. 
+This software is released by Montania System AB, http://www.montania.se/, and licensed 
+under the Apache 2.0 license, see http://www.apache.org/licenses/LICENSE-2.0 

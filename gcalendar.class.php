@@ -1,6 +1,6 @@
 <?php
 /*
-Copyright [yyyy] [name of copyright owner]
+Copyright 2011 Montania System AB
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -22,9 +22,12 @@ limitations under the License.
  * your username (usually an e-mail) and password to the Google account. We're of course not saving
  * this information in any way and all requests are sent encrypted with HTTPS.
  * 
+ * https://github.com/montania/Google-Calendar-API-PHP-Class
+ * 
  * @author Rickard Andersson <rickard@montania.se>
  * @copyright Montania System AB
  * @version 1.0
+ * @license http://www.apache.org/licenses/LICENSE-2.0
  * @package GCalendar
  */
 
@@ -235,150 +238,6 @@ class GCalendar {
   }
   
   /**
-   * Private helper function to send a HTTP GET request and return the json decoded data
-   * @param string $url
-   * @param bool $authenticated   If the request should contain authentication information
-   * @return bool|object          Returns false on failure and object on success.
-   */
-  private function getJsonRequest($url, $authenticated = false) {
-    if (empty($url)) {
-      return false;
-    }
-      
-    $ch = $this->curlGetHandle($url, $authenticated);
-    
-    if ($ch === false) {
-      return false;
-    }
-    
-    $response = curl_exec($ch);
-    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-    
-    if ($http_code == 200) {
-      return json_decode($response);
-    } else {
-      return false;
-    }    
-  }
-  
-  /**
-   * Private helper function to get a cURL handle with the correct options, authentication included. The user has to be successfully authenticated with authenticate() first
-   * @param string $url           The URL where the http request should go
-   * @param bool $authenticated   If the request should contain authentication information
-   * @param array $headers        An array of headers to be sent with the request
-   * @return bool|curl handle     Returns false on failure and a curl handle on success
-   */
-  private function curlGetHandle($url, $authenticated = false, $headers = array()) {
-    if ($authenticated === true && $this->authenticated === false) {
-      return false;
-    } else if (empty($url)) {
-      return false;
-    }
-
-    $headers[] = 'GData-Version: 2.1';    
-    
-    if ($authenticated === true) {
-      $headers[] = 'Authorization: GoogleLogin auth='. $this->auth;
-    }    
-        
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-        
-    return $ch;    
-  }
-  
-  /**
-   * Private helper function to get a cURL handle for POST actions with the correct options. The user has to be successfully authenticated with authenticate() first. 
-   * @param string $url           The URL where the http request should go
-   * @param bool $authenticated   If the request should contain authentication information
-   * @param array $headers        An array of headers to be sent with the request
-   * @return bool|curl handle     Returns false on failure and a curl handle on success
-   */
-  private function curlPostHandle($url, $authenticated = false, $headers = array()) {
-    if ($authenticated === true && $this->authenticated === false) {
-      return false;
-    } else if (empty($url)) {
-      return false;
-    }
-    
-    $headers[] = 'GData-Version: 2.1';
-    
-    if ($authenticated === true) {
-      $headers[] = 'Authorization: GoogleLogin auth='. $this->auth;
-    }
-        
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-    curl_setopt($ch, CURLINFO_HEADER_OUT, true);
-    
-    return $ch;
-  }
-  
-
-  /**
-   * Internal method to create custom method cURL handles
-   * @param string $url           The URL where the HTTP request should go
-   * @param string $method        Can be any of DELETE, PUT, etc.
-   * @param bool $authenticated   If the request should contain authentication information (optional, default = false)
-   * @param array $headers        An array of headers to be sent with the request (optional)
-   * @param bool $return          If cURL should return data instead of printing it (optional, default = true)
-   * @param bool $follow          If cURL should follow redirects (optional, default = true)
-   * @return bool|curl handle     Returns false in failure and a curl handle on success
-   */
-  private function curlCustomHandle($url, $method, $authenticated = false, $headers = array(), $return = true, $follow = true) {
-    if ($authenticated === true && $this->authenticated === false) {
-      return false;
-    } else if (empty($url) || empty($method)) {
-      return false;
-    }
-    
-    $headers[] = 'GData-Version: 2.1';
-    
-    if ($authenticated === true) {
-      $headers[] = 'Authorization: GoogleLogin auth='. $this->auth;
-    }
-    
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, $return);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-    curl_setopt($ch, CURLINFO_HEADER_OUT, true);
-    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, $follow);
-    
-    return $ch;
-  }
-
-  /**
-   * Private helper function to get a cURL handle for DELETE actions with the correct options. The user has to be successfully authenticated with authenticate() first. 
-   * @param string $url           The URL where the http request should go
-   * @param bool $authenticated   If the request should contain authentication information
-   * @param array $headers        An array of headers to be sent with the request
-   * @return bool|curl handle     Returns false on failure and a curl handle on success
-   */    
-  private function curlDeleteHandle($url, $authenticated = false, $headers = array()) {
-    return $this->curlCustomHandle($url, "DELETE", $authenticated, $headers); 
-  }
-
-  /**
-   * Private helper function to get a cURL handle for PUT actions with the correct options. The user has to be successfully authenticated with authenticate() first. 
-   * @param string $url           The URL where the http request should go
-   * @param bool $authenticated   If the request should contain authentication information
-   * @param array $headers        An array of headers to be sent with the request
-   * @return bool|curl handle     Returns false on failure and a curl handle on success
-   */     
-  private function curlPutHandle($url, $authenticated = false, $headers = array()) {
-    return $this->curlCustomHandle($url, "PUT", $authenticated, $headers, true, false);
-  }
-  
-  /**
    * Method to retrieve events from a specific calendar.
    * @param string $handle    E-mail or handle to identify the calendar
    * @param integer $max      Max amount of events to get. (optional, default = 25)
@@ -421,6 +280,7 @@ class GCalendar {
       return false;
     } 
   }
+  
   /**
    * Method to check if an event has been updated. 
    * @param string $handle    E-mail or handle to identify the calendar
@@ -458,6 +318,7 @@ class GCalendar {
       return false;
     }    
   }
+  
   /**
    * Method to search for an event.
    * @param string $handle    E-mail or handle to identify the calendar
@@ -699,5 +560,149 @@ class GCalendar {
     } else {      
       return false;
     }        
+  }  
+  
+  /**
+   * Private helper function to send a HTTP GET request and return the json decoded data
+   * @param string $url
+   * @param bool $authenticated   If the request should contain authentication information
+   * @return bool|object          Returns false on failure and object on success.
+   */
+  private function getJsonRequest($url, $authenticated = false) {
+    if (empty($url)) {
+      return false;
+    }
+      
+    $ch = $this->curlGetHandle($url, $authenticated);
+    
+    if ($ch === false) {
+      return false;
+    }
+    
+    $response = curl_exec($ch);
+    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    
+    if ($http_code == 200) {
+      return json_decode($response);
+    } else {
+      return false;
+    }    
+  }
+  
+  /**
+   * Private helper function to get a cURL handle with the correct options, authentication included. The user has to be successfully authenticated with authenticate() first
+   * @param string $url           The URL where the http request should go
+   * @param bool $authenticated   If the request should contain authentication information
+   * @param array $headers        An array of headers to be sent with the request
+   * @return bool|curl handle     Returns false on failure and a curl handle on success
+   */
+  private function curlGetHandle($url, $authenticated = false, $headers = array()) {
+    if ($authenticated === true && $this->authenticated === false) {
+      return false;
+    } else if (empty($url)) {
+      return false;
+    }
+
+    $headers[] = 'GData-Version: 2.1';    
+    
+    if ($authenticated === true) {
+      $headers[] = 'Authorization: GoogleLogin auth='. $this->auth;
+    }    
+        
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        
+    return $ch;    
+  }
+  
+  /**
+   * Private helper function to get a cURL handle for POST actions with the correct options. The user has to be successfully authenticated with authenticate() first. 
+   * @param string $url           The URL where the http request should go
+   * @param bool $authenticated   If the request should contain authentication information
+   * @param array $headers        An array of headers to be sent with the request
+   * @return bool|curl handle     Returns false on failure and a curl handle on success
+   */
+  private function curlPostHandle($url, $authenticated = false, $headers = array()) {
+    if ($authenticated === true && $this->authenticated === false) {
+      return false;
+    } else if (empty($url)) {
+      return false;
+    }
+    
+    $headers[] = 'GData-Version: 2.1';
+    
+    if ($authenticated === true) {
+      $headers[] = 'Authorization: GoogleLogin auth='. $this->auth;
+    }
+        
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+    curl_setopt($ch, CURLINFO_HEADER_OUT, true);
+    
+    return $ch;
+  }
+  
+
+  /**
+   * Internal method to create custom method cURL handles
+   * @param string $url           The URL where the HTTP request should go
+   * @param string $method        Can be any of DELETE, PUT, etc.
+   * @param bool $authenticated   If the request should contain authentication information (optional, default = false)
+   * @param array $headers        An array of headers to be sent with the request (optional)
+   * @param bool $return          If cURL should return data instead of printing it (optional, default = true)
+   * @param bool $follow          If cURL should follow redirects (optional, default = true)
+   * @return bool|curl handle     Returns false in failure and a curl handle on success
+   */
+  private function curlCustomHandle($url, $method, $authenticated = false, $headers = array(), $return = true, $follow = true) {
+    if ($authenticated === true && $this->authenticated === false) {
+      return false;
+    } else if (empty($url) || empty($method)) {
+      return false;
+    }
+    
+    $headers[] = 'GData-Version: 2.1';
+    
+    if ($authenticated === true) {
+      $headers[] = 'Authorization: GoogleLogin auth='. $this->auth;
+    }
+    
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, $return);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+    curl_setopt($ch, CURLINFO_HEADER_OUT, true);
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, $follow);
+    
+    return $ch;
+  }
+
+  /**
+   * Private helper function to get a cURL handle for DELETE actions with the correct options. The user has to be successfully authenticated with authenticate() first. 
+   * @param string $url           The URL where the http request should go
+   * @param bool $authenticated   If the request should contain authentication information
+   * @param array $headers        An array of headers to be sent with the request
+   * @return bool|curl handle     Returns false on failure and a curl handle on success
+   */    
+  private function curlDeleteHandle($url, $authenticated = false, $headers = array()) {
+    return $this->curlCustomHandle($url, "DELETE", $authenticated, $headers); 
+  }
+
+  /**
+   * Private helper function to get a cURL handle for PUT actions with the correct options. The user has to be successfully authenticated with authenticate() first. 
+   * @param string $url           The URL where the http request should go
+   * @param bool $authenticated   If the request should contain authentication information
+   * @param array $headers        An array of headers to be sent with the request
+   * @return bool|curl handle     Returns false on failure and a curl handle on success
+   */     
+  private function curlPutHandle($url, $authenticated = false, $headers = array()) {
+    return $this->curlCustomHandle($url, "PUT", $authenticated, $headers, true, false);
   }
 }
