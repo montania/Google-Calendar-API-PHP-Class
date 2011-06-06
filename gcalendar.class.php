@@ -707,6 +707,64 @@ class GCalendar {
   }
 
   /**
+   * Adds user(s) to the Access Control List
+   * @param string $handle        E-mail or handle to identify the calendar
+   * @param string $scope         A person or set of people ( e-mail address / domain name / null )
+   * @param string $scope_type    The type of scope ( user / domain / default )
+   * @param string $role          The access level ( root / owner / editor / freebusy / read / none )
+   */
+  function addUserToACL($handle = "default", $role = "read", $scope = null, $scopeType = "default") {
+    // POST /calendar/feeds/liz@gmail.com/acl/full
+    $url = sprintf("https://www.google.com/calendar/feeds/%s/acl/full/", $handle);    
+    $data = array(
+      'data' => array(
+        'scopeType' => $scopeType,
+        'role' => $role
+      )
+    );
+    if (!empty($scope)) {
+      $data['data']['scope'] = $scope;
+    }
+    $json = json_encode($data);
+
+    $headers = array('Content-type: application/json');
+
+    $ch = $this->curlPostHandle($url, true, $headers);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+    curl_setopt($ch, CURLOPT_HEADER, true);
+
+    $response = curl_exec($ch);
+    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $response_headers = $this->http_parse_headers($response);
+
+    curl_close($ch);
+    unset($ch);
+
+    if ($http_code == 302) {
+
+      $url = $response_headers['Location'];
+
+      $ch = $this->curlPostHandle($url, true, $headers);
+
+      curl_setopt($ch, CURLOPT_POSTFIELDS, ($json));
+
+      $response = curl_exec($ch);
+      $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+      if ($http_code == 201) {
+        return json_decode($response);
+      } else {      
+        return false;
+      }
+
+    } else if ($http_code == 201) {
+      return json_decode($response);
+    } else {      
+      return false;
+    }   
+  }
+
+  /**
    * Creates the http_parse_headers function if pecl_http is not installed
    */
   if(!function_exists('http_parse_headers')) {
