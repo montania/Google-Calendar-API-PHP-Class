@@ -236,7 +236,30 @@ class GCalendar {
       return false;
     }   
   }
-  
+
+  /**  
+   * Function to delete a calendar
+   * @param string $handle    E-mail or handle to identify the calendar
+   * @return bool             Whether or not the calendar was deleted successfully
+   */
+  public function deleteCalendar($handle) {
+    
+    $url = "https://www.google.com/calendar/feeds/default/owncalendars/full/$handle";
+    $ch = $this->curlDeleteHandle($url, true, array());
+
+    $response = curl_exec($ch);
+    
+    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $url = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
+ 
+    if($http_code==200) {
+        return true;
+    } else {
+        return false;
+    }    
+  }
+
+
   /**
    * Method to retrieve events from a specific calendar.
    * @param string $handle    E-mail or handle to identify the calendar
