@@ -341,6 +341,38 @@ class GCalendar {
       return false;
     }    
   }
+
+  /**
+   * Get an event by its entryID
+   * @param string $handle    E-mail or handle to identify the calendar
+   * @return bool|object      Returns false on failure and object on success
+   */
+  function getEventByID($handle, $event_id) {
+    if ($this->authenticated === false) {
+      return false;
+    } else if (empty($handle)) {
+      return false;
+    }
+    // GET https://www.google.com/calendar/feeds/default/private/full/entryID
+    $url = "https://www.google.com/calendar/feeds/$handle/private/full/$event_id?alt=jsonc";
+    
+    $ch = $this->curlGetHandle($url, true);
+
+    $response = curl_exec($ch);
+    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    
+    if ($http_code == "200") {
+      $event = json_decode($response);
+      if (!empty($event)) { 
+        return $event;
+      } else {
+        return array();
+      }
+    } else {
+      return false;
+    }
+  }
+
   
   /**
    * Method to search for an event.
@@ -791,8 +823,7 @@ class GCalendar {
    * Creates the http_parse_headers function if pecl_http is not installed
    */
   if(!function_exists('http_parse_headers')) {
-    function http_parse_headers($header)
-    {
+    function http_parse_headers($header) {
       $retVal = array();
       $fields = explode("\r\n", preg_replace('/\x0D\x0A[\x09\x20]+/', ' ', $header));
       foreach( $fields as $field ) {
@@ -809,7 +840,7 @@ class GCalendar {
     }   
   } else {
     function http_parse_headers($header) {
-      http_parse_headers($header);
+      return http_parse_headers($header);
     }
   }
 }
