@@ -208,7 +208,7 @@ class GCalendar {
 
     $response = curl_exec($ch);
     $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $response_headers = http_parse_headers($response);
+    $response_headers = $this->http_parse_headers($response);
     
     curl_close($ch);
     unset($ch);
@@ -415,7 +415,7 @@ class GCalendar {
 
     $response = curl_exec($ch);
     $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $response_headers = http_parse_headers($response);
+    $response_headers = $this->http_parse_headers($response);
     
     curl_close($ch);
     unset($ch);
@@ -533,7 +533,7 @@ class GCalendar {
 
     $response = curl_exec($ch);
     $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $response_headers = http_parse_headers($response);
+    $response_headers = $this->http_parse_headers($response);
         
     curl_close($ch);
     unset($ch);
@@ -704,5 +704,31 @@ class GCalendar {
    */     
   private function curlPutHandle($url, $authenticated = false, $headers = array()) {
     return $this->curlCustomHandle($url, "PUT", $authenticated, $headers, true, false);
+  }
+
+  /**
+   * Creates the http_parse_headers function if pecl_http is not installed
+   */
+  if(!function_exists('http_parse_headers')) {
+    function http_parse_headers($header)
+    {
+      $retVal = array();
+      $fields = explode("\r\n", preg_replace('/\x0D\x0A[\x09\x20]+/', ' ', $header));
+      foreach( $fields as $field ) {
+        if( preg_match('/([^:]+): (.+)/m', $field, $match) ) {
+          $match[1] = preg_replace('/(?<=^|[\x09\x20\x2D])./e', 'strtoupper("\0")', strtolower(trim($match[1])));
+          if( isset($retVal[$match[1]]) ) {
+            $retVal[$match[1]] = array($retVal[$match[1]], $match[2]);
+          } else {
+            $retVal[$match[1]] = trim($match[2]);
+          }
+        }
+      }
+      return $retVal;
+    }   
+  } else {
+    function http_parse_headers($header) {
+      http_parse_headers($header);
+    }
   }
 }
