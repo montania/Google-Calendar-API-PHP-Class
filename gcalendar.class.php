@@ -670,6 +670,8 @@ class GCalendar {
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+    
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
         
     return $ch;    
   }
@@ -700,6 +702,8 @@ class GCalendar {
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
     curl_setopt($ch, CURLINFO_HEADER_OUT, true);
+    
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
     
     return $ch;
   }
@@ -735,6 +739,8 @@ class GCalendar {
     curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
     curl_setopt($ch, CURLINFO_HEADER_OUT, true);
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, $follow);
+    
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
     
     return $ch;
   }
@@ -822,25 +828,23 @@ class GCalendar {
   /**
    * Creates the http_parse_headers function if pecl_http is not installed
    */
-  if(!function_exists('http_parse_headers')) {
-    function http_parse_headers($header) {
-      $retVal = array();
-      $fields = explode("\r\n", preg_replace('/\x0D\x0A[\x09\x20]+/', ' ', $header));
-      foreach( $fields as $field ) {
-        if( preg_match('/([^:]+): (.+)/m', $field, $match) ) {
-          $match[1] = preg_replace('/(?<=^|[\x09\x20\x2D])./e', 'strtoupper("\0")', strtolower(trim($match[1])));
-          if( isset($retVal[$match[1]]) ) {
-            $retVal[$match[1]] = array($retVal[$match[1]], $match[2]);
-          } else {
-            $retVal[$match[1]] = trim($match[2]);
+  function http_parse_headers($header) {
+    if(!function_exists('http_parse_headers')) {
+        $retVal = array();
+        $fields = explode("\r\n", preg_replace('/\x0D\x0A[\x09\x20]+/', ' ', $header));
+        foreach( $fields as $field ) {
+          if( preg_match('/([^:]+): (.+)/m', $field, $match) ) {
+            $match[1] = preg_replace('/(?<=^|[\x09\x20\x2D])./e', 'strtoupper("\0")', strtolower(trim($match[1])));
+            if( isset($retVal[$match[1]]) ) {
+              $retVal[$match[1]] = array($retVal[$match[1]], $match[2]);
+            } else {
+              $retVal[$match[1]] = trim($match[2]);
+            }
           }
         }
-      }
-      return $retVal;
-    }   
-  } else {
-    function http_parse_headers($header) {
-      return http_parse_headers($header);
+        return $retVal;
+    } else {
+        return http_parse_headers($header);
     }
   }
 }
