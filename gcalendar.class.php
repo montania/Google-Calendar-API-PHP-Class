@@ -208,7 +208,7 @@ class GCalendar {
 
     $response = curl_exec($ch);
     $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $response_headers = http_parse_headers($response);
+    $response_headers = $this->http_parse_headers($response);
     
     curl_close($ch);
     unset($ch);
@@ -236,7 +236,30 @@ class GCalendar {
       return false;
     }   
   }
-  
+
+  /**  
+   * Function to delete a calendar
+   * @param string $handle    E-mail or handle to identify the calendar
+   * @return bool             Whether or not the calendar was deleted successfully
+   */
+  public function deleteCalendar($handle) {
+    
+    $url = "https://www.google.com/calendar/feeds/default/owncalendars/full/$handle";
+    $ch = $this->curlDeleteHandle($url, true, array());
+
+    $response = curl_exec($ch);
+    
+    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $url = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
+ 
+    if($http_code==200) {
+        return true;
+    } else {
+        return false;
+    }    
+  }
+
+
   /**
    * Method to retrieve events from a specific calendar.
    * @param string $handle    E-mail or handle to identify the calendar
@@ -318,6 +341,38 @@ class GCalendar {
       return false;
     }    
   }
+
+  /**
+   * Get an event by its entryID
+   * @param string $handle    E-mail or handle to identify the calendar
+   * @return bool|object      Returns false on failure and object on success
+   */
+  function getEventByID($handle, $event_id) {
+    if ($this->authenticated === false) {
+      return false;
+    } else if (empty($handle)) {
+      return false;
+    }
+    // GET https://www.google.com/calendar/feeds/default/private/full/entryID
+    $url = "https://www.google.com/calendar/feeds/$handle/private/full/$event_id?alt=jsonc";
+    
+    $ch = $this->curlGetHandle($url, true);
+
+    $response = curl_exec($ch);
+    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    
+    if ($http_code == "200") {
+      $event = json_decode($response);
+      if (!empty($event)) { 
+        return $event;
+      } else {
+        return array();
+      }
+    } else {
+      return false;
+    }
+  }
+
   
   /**
    * Method to search for an event.
@@ -415,7 +470,7 @@ class GCalendar {
 
     $response = curl_exec($ch);
     $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $response_headers = http_parse_headers($response);
+    $response_headers = $this->http_parse_headers($response);
     
     curl_close($ch);
     unset($ch);
@@ -533,7 +588,7 @@ class GCalendar {
 
     $response = curl_exec($ch);
     $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $response_headers = http_parse_headers($response);
+    $response_headers = $this->http_parse_headers($response);
         
     curl_close($ch);
     unset($ch);
@@ -615,6 +670,8 @@ class GCalendar {
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+    
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
         
     return $ch;    
   }
@@ -645,6 +702,8 @@ class GCalendar {
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
     curl_setopt($ch, CURLINFO_HEADER_OUT, true);
+    
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
     
     return $ch;
   }
@@ -681,6 +740,8 @@ class GCalendar {
     curl_setopt($ch, CURLINFO_HEADER_OUT, true);
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, $follow);
     
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+    
     return $ch;
   }
 
@@ -704,5 +765,86 @@ class GCalendar {
    */     
   private function curlPutHandle($url, $authenticated = false, $headers = array()) {
     return $this->curlCustomHandle($url, "PUT", $authenticated, $headers, true, false);
+  }
+
+  /**
+   * Adds user(s) to the Access Control List
+   * @param string $handle        E-mail or handle to identify the calendar
+   * @param string $scope         A person or set of people ( e-mail address / domain name / null )
+   * @param string $scope_type    The type of scope ( user / domain / default )
+   * @param string $role          The access level ( root / owner / editor / freebusy / read / none )
+   */
+  function addUserToACL($handle = "default", $role = "read", $scope = null, $scopeType = "default") {
+    // POST /calendar/feeds/liz@gmail.com/acl/full
+    $url = sprintf("https://www.google.com/calendar/feeds/%s/acl/full/", $handle);    
+    $data = array(
+      'data' => array(
+        'scopeType' => $scopeType,
+        'role' => $role
+      )
+    );
+    if (!empty($scope)) {
+      $data['data']['scope'] = $scope;
+    }
+    $json = json_encode($data);
+
+    $headers = array('Content-type: application/json');
+
+    $ch = $this->curlPostHandle($url, true, $headers);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+    curl_setopt($ch, CURLOPT_HEADER, true);
+
+    $response = curl_exec($ch);
+    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $response_headers = $this->http_parse_headers($response);
+
+    curl_close($ch);
+    unset($ch);
+
+    if ($http_code == 302) {
+
+      $url = $response_headers['Location'];
+
+      $ch = $this->curlPostHandle($url, true, $headers);
+
+      curl_setopt($ch, CURLOPT_POSTFIELDS, ($json));
+
+      $response = curl_exec($ch);
+      $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+      if ($http_code == 201) {
+        return json_decode($response);
+      } else {      
+        return false;
+      }
+
+    } else if ($http_code == 201) {
+      return json_decode($response);
+    } else {      
+      return false;
+    }   
+  }
+
+  /**
+   * Creates the http_parse_headers function if pecl_http is not installed
+   */
+  function http_parse_headers($header) {
+    if(!function_exists('http_parse_headers')) {
+        $retVal = array();
+        $fields = explode("\r\n", preg_replace('/\x0D\x0A[\x09\x20]+/', ' ', $header));
+        foreach( $fields as $field ) {
+          if( preg_match('/([^:]+): (.+)/m', $field, $match) ) {
+            $match[1] = preg_replace('/(?<=^|[\x09\x20\x2D])./e', 'strtoupper("\0")', strtolower(trim($match[1])));
+            if( isset($retVal[$match[1]]) ) {
+              $retVal[$match[1]] = array($retVal[$match[1]], $match[2]);
+            } else {
+              $retVal[$match[1]] = trim($match[2]);
+            }
+          }
+        }
+        return $retVal;
+    } else {
+        return http_parse_headers($header);
+    }
   }
 }
