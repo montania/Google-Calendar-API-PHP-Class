@@ -44,6 +44,7 @@ class GCalendar {
   private $email;
   private $password;
   private $source = "Montania-GCalendar-PHP";
+  private $timezone="Europe/Stockholm"; //http://www.php.net/manual/en/timezones.php
   private $sid;
   private $lsid;
   private $auth;
@@ -57,10 +58,10 @@ class GCalendar {
   function __construct($email, $password) {
     $this->email    = $email;
     $this->password = $password;
-    date_default_timezone_set("Europe/Stockholm");
+    date_default_timezone_set($this->timezone);
     
     DEFINE("DEFAULT_MAX_EVENTS", 25);
-    
+    $this->authenticate();
   }
   
   /**
@@ -182,7 +183,18 @@ class GCalendar {
    * @param string $location  Location of this calendar, geographically
    * @return bool|object      Returns false on failure and object on success
    */
-  function createCalendar($title, $details, $timezone, $hidden, $color, $location) {
+  function createCalendar($title, $details, $timezone=false, $hidden=false, $color=false, $location) {
+    if(!$color){
+  	  $colors=array(0 => '#A32929' ,1 => '#B1365F' ,2 => '#7A367A' ,3 => '#5229A3' ,4 => '#29527A' ,5 => '#2952A3' ,6 => '#1B887A' ,7 => '#28754E' ,8 => '#0D7813' ,
+9 => '#528800' ,10 => '#88880E' ,11 => '#AB8B00' ,12 => '#BE6D00' ,13 => '#B1440E' ,14 => '#865A5A' ,15 => '#705770' ,16 => '#4E5D6C' ,17 => '#5A6986' ,
+18 => '#4A716C' ,19 => '#6E6E41' ,20 => '#8D6F47' ,21 => '#853104' ,22 => '#691426' ,23 => '#5C1158' ,24 => '#23164E' ,25 => '#182C57' ,26 => '#060D5E' ,
+27 => '#125A12' ,28 => '#2F6213' ,29 => '#2F6309' ,30 => '#5F6B02' ,31 => '#8C500B' ,32 => '#8C500B' ,33 => '#754916' ,34 => '#6B3304' ,35 => '#5B123B'
+ ,36 => '#42104A' ,37 => '#113F47' ,38 => '#333333' ,39 => '#0F4B38' ,40 => '#856508' );
+ 		$color=$colors[rand(0,40)];
+	}
+  if(!$timezone){
+    $timezone=$this->timezone;
+  }
     if ($this->authenticated === false) {
       return false;
     } else if (empty($title) || empty($timezone) || !is_bool($hidden) || empty($color) || empty($location)) {
