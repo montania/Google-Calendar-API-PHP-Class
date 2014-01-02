@@ -379,9 +379,12 @@ class GCalendar {
    * @param string $handle    E-mail or handle to identify the calendar
    * @param string $query     The search query to perform
    * @param integer $max      Max amount of events to get. (optional, default = 25)
+   * @param string $from      Start date. (optional)
+   * @param string $end       End date. (optional)
+   * @param string $sortOrder orderby parameter to pass to API. (optional, one of 'lastmodified' or 'starttime')
    * @return bool|object      Returns false on failure and object on success
    */
-  function findEvent($handle, $query, $max = DEFAULT_MAX_EVENTS) {
+  function findEvent($handle, $query, $max = DEFAULT_MAX_EVENTS, $from = null, $to = null, $sortOrder = 'lastmodified') {
     if ($this->authenticated === false) {
       return false;
     } else if (empty($query)) {
@@ -393,9 +396,23 @@ class GCalendar {
     }
     if (!is_numeric($max)) {
       $max = DEFAULT_MAX_EVENTS;
-    }    
+    }
+
+    if (!in_array($sortOrder, array('lastmodified', 'starttime'))) {
+      $sortOrder = 'lastmodified';
+    }
     
-    $url = sprintf("https://www.google.com/calendar/feeds/%s/private/full?q=%s&alt=jsonc&max-results=%s", $handle, urlencode($query), $max);
+    $url = sprintf("https://www.google.com/calendar/feeds/%s/private/full?q=%s&alt=jsonc&max-results=%s&orderby=%s", $handle, urlencode($query), $max, $sortOrder);
+
+    if ($from != null) {
+      $from = urlencode(date("c", strtotime($from)));
+      $url .= "&start-min=" . $from;
+    }
+    if ($to != null) {
+      $to   = urlencode(date("c", strtotime($to)));
+      $url .= "&start-max=" . $to;
+    }
+
     $ch = $this->curlGetHandle($url, true);
     
     $response = curl_exec($ch);
